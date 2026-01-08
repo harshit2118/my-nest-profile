@@ -56,4 +56,9 @@ export class AuthService {
       },
     };
   }
+
+  async createUserAdmin(email: string) {
+    const user = await this.userService.createAdmin(email);
+    return user;
+  }
 }

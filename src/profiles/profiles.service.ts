@@ -2,9 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { generateRandomId } from 'helpers/helper';
 import { CreateProfileDTO } from './dto/create-profile.dto';
 import { UpdateProfileDTO } from './dto/update-profile.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Profile } from './profile.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ProfilesService {
+  constructor(
+    @InjectRepository(Profile) private profileRpository: Repository<Profile>,
+  ) {}
   private profiles = [
     {
       id: generateRandomId(20),
@@ -22,43 +28,63 @@ export class ProfilesService {
       description: 'It is what it is...',
     },
   ];
-  findAll() {
-    return this.profiles;
+  async findAll() {
+    const allprofiles = await this.profileRpository.find();
+    if (!allprofiles?.length) {
+      throw new NotFoundException('There are no profiles');
+    }
+    return allprofiles;
+    //return this.profiles;
   }
-  findOne(id: string) {
-    if (!this?.profiles?.find((profile) => profile?.id == id)) {
+  async findOne(id: string) {
+    const profile = await this.profileRpository.findOne({
+      where: { id },
+    });
+    if (!profile) {
       throw new NotFoundException(`Profile with id ${id} is not found`);
     }
-    return this?.profiles?.find((profile) => profile?.id == id);
+    return profile;
   }
-  createProfile(profile: CreateProfileDTO) {
+  async createProfile(profile: CreateProfileDTO) {
     console.log('profile', profile);
-    this.profiles.push({ id: generateRandomId(20), ...profile });
-    console.log('updated profiles', this.profiles);
-    return this.profiles;
+    /*Prepare the entity */
+    const newProfile = this.profileRpository.create({
+      id: generateRandomId(20),
+      ...profile,
+    });
+    /*Save into db*/
+    await this.profileRpository.save(newProfile);
+    //this.profiles.push({ id: generateRandomId(20), ...profile });
+    //console.log('updated profiles', this.profiles);
+    return newProfile;
   }
-  updateProfile(id: string, profile: UpdateProfileDTO) {
-    let updateIndex = this?.profiles?.findIndex((prof) => prof?.id === id);
-    if (updateIndex === -1) {
+  async updateProfile(id: string, profile: UpdateProfileDTO) {
+    const existingProfile = await this.profileRpository.findOne({
+      where: { id },
+    });
+    //let updateIndex = this?.profiles?.findIndex((prof) => prof?.id === id);
+    if (!existingProfile) {
       throw new NotFoundException(`Profile with id ${id} is not found`);
     }
 
-    let updatedProfile = {
-      ...this.profiles[updateIndex],
+    const updatedProfile = {
+      ...existingProfile,
       ...profile,
     };
-    this.profiles[updateIndex] = {
-      ...updatedProfile,
-    };
+    await this.profileRpository.save(updatedProfile);
+    //this.profiles[updateIndex] = {
+    //  ...updatedProfile,
+    //};
     return updatedProfile;
   }
-  deleteProfile(id: string) {
-    let deleteProfile = this?.profiles?.find((prof) => prof?.id == id);
-    if (!deleteProfile) {
+  async deleteProfile(id: string) {
+    const profile = await this.profileRpository.findOne({ where: { id } });
+    //let deleteProfile = this?.profiles?.find((prof) => prof?.id == id);
+    if (!profile) {
       throw new NotFoundException(`Profile with id ${id} is not found`);
     }
-
-    this.profiles = this.profiles.filter((profile) => profile.id !== id);
-    return deleteProfile;
+    await this.profileRpository.remove(profile);
+    //this.profiles = this.profiles.filter((profile) => profile.id !== id);
+    return profile;
   }
 }

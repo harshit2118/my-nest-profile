@@ -2,7 +2,7 @@ import { IsString, Length } from 'class-validator';
 
 export class CreateProfileDTO {
   @IsString()
-  @Length(3, 12)
+  @Length(3, 20)
   name: string;
   @IsString()
   @Length(10, 50)

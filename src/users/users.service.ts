@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { generateRandomId } from 'helpers/helper';
 import * as bcrypt from 'bcryptjs';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -54,6 +58,19 @@ export class UsersService {
     return {
       ...newUser,
       password: '',
+    };
+  }
+  async createAdmin(email: string) {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} is not found`);
+    }
+    user.role = 'admin';
+    const updatedUser = await this.userRepository.save(user);
+    return {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      role: updatedUser.role,
     };
   }
 }
