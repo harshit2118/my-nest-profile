@@ -5,7 +5,7 @@ import { UsersModule } from 'src/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import type { StringValue } from 'ms';
 import { ConfigService } from '@nestjs/config';
-
+//auth module
 @Module({
   imports: [
     UsersModule,
