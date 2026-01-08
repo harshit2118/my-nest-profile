@@ -1,9 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { generateRandomId } from 'helpers/helper';
 import * as bcrypt from 'bcryptjs';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
+  constructor(
+    @InjectRepository(User) private userRepository: Repository<User>,
+  ) {}
   private users = [
     {
       id: generateRandomId(12),
@@ -25,11 +31,14 @@ export class UsersService {
     },
   ];
   findByEmail(email: string) {
-    return this.users.find((user) => user?.email === email);
+    return this.userRepository.findOne({
+      where: { email },
+    });
+    //return this.users.find((user) => user?.email === email);
   }
-  createUser(email: string, password: string) {
+  async createUser(email: string, password: string) {
     console.log('email', email, 'password', password);
-    const existingUser = this.findByEmail(email);
+    const existingUser = await this.findByEmail(email);
     if (!!existingUser) {
       throw new BadRequestException('User Already Exist');
     }
@@ -39,7 +48,9 @@ export class UsersService {
       password: bcrypt.hashSync(password, 10),
       role: 'user',
     };
-    this.users.push(newUser);
+
+    const savedUser = await this.userRepository.save(newUser);
+    //this.users.push(newUser);
     return {
       ...newUser,
       password: '',

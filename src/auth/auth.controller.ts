@@ -12,5 +12,7 @@ export class AuthController {
     return this.authService.signup(signupDto.email, signupDto.password);
   }
   @Post('signin')
-  signin(@Body() signinDto: SignInDTO) {}
+  signin(@Body() signinDto: SignInDTO) {
+    return this.authService.signin(signinDto.email, signinDto.password);
+  }
 }
